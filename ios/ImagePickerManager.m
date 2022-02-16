@@ -4,6 +4,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
 #import <PhotosUI/PhotosUI.h>
+#import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
 
 @import MobileCoreServices;
 
@@ -130,7 +131,9 @@ RCT_EXPORT_METHOD(launchImageLibrary:(NSDictionary *)options callback:(RCTRespon
         data = UIImageJPEGRepresentation(image, [self.options[@"quality"] floatValue]);
     } else if ([fileType isEqualToString:@"png"]) {
         data = UIImagePNGRepresentation(image);
-    }
+    } else if ([fileType isEqualToString:@"webp"]) {
+       data = [[SDImageWebPCoder sharedCoder] encodedDataWithImage:image format:SDImageFormatWebP options:nil];
+     }
     
     NSMutableDictionary *asset = [[NSMutableDictionary alloc] init];
     asset[@"type"] = [@"image/" stringByAppendingString:fileType];
@@ -425,8 +428,11 @@ RCT_EXPORT_METHOD(launchImageLibrary:(NSDictionary *)options callback:(RCTRespon
         
         dispatch_group_enter(completionGroup);
 
-        if ([provider canLoadObjectOfClass:[UIImage class]]) {
-            NSString *identifier = provider.registeredTypeIdentifiers.firstObject;
+
+        NSString *identifier = provider.registeredTypeIdentifiers.firstObject;
+        BOOL isWebp = [identifier isEqualToString:@"org.webmproject.webp"];
+        
+        if ([provider canLoadObjectOfClass:[UIImage class]] || isWebp) {
             // Matches both com.apple.live-photo-bundle and com.apple.private.live-photo-bundle
             if ([identifier containsString:@"live-photo-bundle"]) {
                 // Handle live photos
